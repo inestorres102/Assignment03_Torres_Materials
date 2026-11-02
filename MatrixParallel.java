@@ -1,0 +1,176 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.io.PrintWriter;
+import java.util.Locale;
+import java.util.Random;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+
+public class MatrixParallel {
+
+    // 1. Deterministic Matrix Generator
+    public static double[][] generateMatrix(int n, long seed) {
+        Random rand = new Random(seed);
+        double[][] matrix = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                matrix[i][j] = rand.nextDouble();
+            }
+        }
+        return matrix;
+    }
+
+    // 2. Sequential Baseline
+    public static double[][] multiplySequential(double[][] A, double[][] B, int n) {
+        double[][] C = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            for (int k = 0; k < n; k++) {
+                double a = A[i][k];
+                for (int j = 0; j < n; j++) {
+                    C[i][j] += a * B[k][j];
+                }
+            }
+        }
+        return C;
+    }
+
+    // 3. Parallel Implementation (Row Distribution)
+    public static double[][] multiplyParallel(double[][] A, double[][] B, int n, int numThreads) throws InterruptedException {
+        double[][] C = new double[n][n];
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
+        for (int i = 0; i < n; i++) {
+            final int row = i;
+            executor.submit(() -> {
+                for (int k = 0; k < n; k++) {
+                    double a = A[row][k];
+                    for (int j = 0; j < n; j++) {
+                        C[row][j] += a * B[k][j];
+                    }
+                }
+            });
+        }
+
+        executor.shutdown();
+        executor.awaitTermination(60, TimeUnit.SECONDS);
+        return C;
+    }
+
+    // 4. Correctness Check (Epsilon = 1e-9)
+    public static boolean checkCorrectness(int n) throws InterruptedException {
+        double[][] A = generateMatrix(n, 42L);
+        double[][] I = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            I[i][i] = 1.0;
+        }
+
+        // Validate both sequential and parallel against identity matrix (A * I = A)
+        double[][] cSeq = multiplySequential(A, I, n);
+        double[][] cPar = multiplyParallel(A, I, n, 2);
+
+        double epsilon = 1e-9;
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (Math.abs(cSeq[i][j] - A[i][j]) > epsilon || 
+                    Math.abs(cPar[i][j] - A[i][j]) > epsilon) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    // 5. Benchmark Harness
+    public static void main(String[] args) {
+        try {
+            if (!checkCorrectness(50)) {
+                System.err.println("Error: Correctness validation failed. Tolerance exceeded.");
+                return;
+            }
+            System.out.println("Validation successful: Sequential and Parallel kernels match identity matrix.");
+
+            int n = 500; // Fixed feasible matrix size for thread scaling comparison
+            int[] threadCounts = {1, 2, 4, 8, 12, 16}; // Adjust to your CPU's physical/logical cores
+            int repetitions = 5;
+            String csvFile = "results_parallel.csv";
+
+            boolean writeHeader = !(new File(csvFile).exists());
+            PrintWriter writer = new PrintWriter(new FileWriter(csvFile, true));
+            if (writeHeader) {
+                writer.println("method,n,threads,repetition,time_seconds,memory_mb");
+            }
+
+            Runtime runtime = Runtime.getRuntime();
+
+            System.out.printf("\n--- Running Parallel Matrix Multiplication (n = %d) ---\n", n);
+
+            // Discarded warm-up runs
+            double[][] Aw = generateMatrix(n, 1L);
+            double[][] Bw = generateMatrix(n, 2L);
+            multiplySequential(Aw, Bw, n);
+            multiplyParallel(Aw, Bw, n, 2);
+
+            // Test Parallel configurations
+            for (int threads : threadCounts) {
+                for (int rep = 1; rep <= repetitions; rep++) {
+                    double[][] A = generateMatrix(n, 100L + rep);
+                    double[][] B = generateMatrix(n, 200L + rep);
+
+                    System.gc(); // Request garbage collection before memory baseline
+                    long memBefore = runtime.totalMemory() - runtime.freeMemory();
+                    
+                    long start = System.nanoTime();
+                    double[][] C = multiplyParallel(A, B, n, threads);
+                    long duration = System.nanoTime() - start;
+                    
+                    long memAfter = runtime.totalMemory() - runtime.freeMemory();
+                    
+                    double timeSec = duration / 1.0e9;
+                    double memMb = Math.max(0, memAfter - memBefore) / (1024.0 * 1024.0);
+                    if (memMb <= 0.01) {
+                        memMb = (double) (n * n * 8L) / (1024.0 * 1024.0); // Fallback estimate
+                    }
+
+                    writer.printf(Locale.US, "Parallel,%d,%d,%d,%.6f,%.4f\n", n, threads, rep, timeSec, memMb);
+                    writer.flush();
+                    
+                    System.out.printf("Method: Parallel   | Threads: %2d | Rep: %d | Time: %.4f s\n", threads, rep, timeSec);
+                }
+            }
+
+            // Test Sequential baseline
+            System.out.println("\n--- Running Sequential Baseline ---");
+            for (int rep = 1; rep <= repetitions; rep++) {
+                double[][] A = generateMatrix(n, 300L + rep);
+                double[][] B = generateMatrix(n, 400L + rep);
+
+                System.gc();
+                long memBefore = runtime.totalMemory() - runtime.freeMemory();
+                
+                long start = System.nanoTime();
+                double[][] C = multiplySequential(A, B, n);
+                long duration = System.nanoTime() - start;
+                
+                long memAfter = runtime.totalMemory() - runtime.freeMemory();
+                
+                double timeSec = duration / 1.0e9;
+                double memMb = Math.max(0, memAfter - memBefore) / (1024.0 * 1024.0);
+                if (memMb <= 0.01) {
+                    memMb = (double) (n * n * 8L) / (1024.0 * 1024.0);
+                }
+
+                writer.printf(Locale.US, "Sequential,%d,1,%d,%.6f,%.4f\n", n, rep, timeSec, memMb);
+                writer.flush();
+                
+                System.out.printf("Method: Sequential | Threads:  1 | Rep: %d | Time: %.4f s\n", rep, timeSec);
+            }
+
+            writer.close();
+            System.out.println("\n[Java] Parallel benchmark completed successfully. Data saved to " + csvFile);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
