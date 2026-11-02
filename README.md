@@ -1,13 +1,13 @@
 # Assignment 3: Parallel Matrix Multiplication and Scalability Analysis
 
-Empirical study evaluating shared-memory parallelization using Java's ExecutorService, focusing on multithreaded Speedup ($S(p)$) and Efficiency ($E(p)$) across varying thread counts.
+Empirical study evaluating shared-memory parallelization using Java's ExecutorService, focusing on multithreaded Speedup $(S(p))$ and Efficiency $(E(p))$ across varying thread counts.
 
 ## 1. System and Hardware Environment
-- **CPU:** Intel Core i7-12650H (10 Physical Cores: 6P+4E, 16 Logical Threads)
+- **CPU:** 12th Gen Intel(R) Core i7-12650H (10 Physical Cores: 6P+4E, 16 Logical Threads)
 - **RAM:** 16.0 GB DDR4
 - **Operating System:** Windows 11 Home (64-bit)
 - **Runtime Environment:** Java 21 LTS (Oracle HotSpot 64-Bit Server VM)
-- **Python Environment:** Python 3.13.14 (Pandas, Matplotlib, NumPy)
+- **Python Environment:** Python 3.13 (Pandas, Matplotlib, NumPy)
 
 ## 2. Experimental Protocol
 - **Algorithmic Workload:** Equivalent dense $O(n^3)$ matrix multiplication algorithm applied in both sequential and parallel implementations.
@@ -25,19 +25,18 @@ javac MatrixParallel.java
 ```
 
 ### Execution
-Run the Java benchmark to generate raw measurements (results_parallel.csv):
-
+Run the Java benchmark to generate raw measurements (`results_parallel.csv`):
 ```bash
 java MatrixParallel
 ```
-Run the Python analysis script to compute Speedup/Efficiency and generate plots:
 
+Run the Python analysis script to compute Speedup/Efficiency and generate plots:
 ```bash
 python plot_assignment3.py
 ```
 
 ## 4. Repository File Structure
-
+```text
 Assignment3/
 ├── .gitignore               # Excludes compiled .class files and caches
 ├── README.md                # System specs and execution guide
@@ -47,3 +46,4 @@ Assignment3/
 ├── summary_parallel.csv     # Computed statistics (Medians, Speedup, Efficiency)
 ├── plot_speedup.png         # S(p) scaling plot
 └── plot_efficiency.png      # E(p) scaling plot
+```
