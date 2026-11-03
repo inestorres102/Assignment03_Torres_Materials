@@ -7,7 +7,8 @@ Empirical study evaluating shared-memory parallelization using Java's `ExecutorS
 - **CPU:** 12th Gen Intel(R) Core(TM) i7-12650H (10 physical cores: 6 Performance + 4 Efficiency cores, 16 logical processors).
 - **RAM:** 16 GB DDR4.
 - **Operating System:** Windows 11 Home (64-bit).
-- **Java Runtime:** Java 27.0.1.0.3, Oracle HotSpot 64-Bit Server VM.
+- **Java Compiler:** `javac 27.0.1.0.3`
+- **Java Runtime:** `java 27.0.1.0.3` (Oracle HotSpot 64-Bit Server VM)
 - **Available Processors:** 16, as reported by `Runtime.getRuntime().availableProcessors()`.
 - **Python Environment:** Python 3.13 (Pandas, Matplotlib and NumPy).
 
