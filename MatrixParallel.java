@@ -57,29 +57,28 @@ public class MatrixParallel {
         return C;
     }
 
-    // 4. Correctness Check (Epsilon = 1e-9)
+
+    // 4. Correctness Check
     public static boolean checkCorrectness(int n) throws InterruptedException {
         double[][] A = generateMatrix(n, 42L);
-        double[][] I = new double[n][n];
-        for (int i = 0; i < n; i++) {
-            I[i][i] = 1.0;
-        }
+        double[][] B = generateMatrix(n, 84L);
 
-        // Validate both sequential and parallel against identity matrix (A * I = A)
-        double[][] cSeq = multiplySequential(A, I, n);
-        double[][] cPar = multiplyParallel(A, I, n, 2);
+        double[][] cSeq = multiplySequential(A, B, n);
+        double[][] cPar = multiplyParallel(A, B, n, 2);
 
         double epsilon = 1e-9;
+
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                if (Math.abs(cSeq[i][j] - A[i][j]) > epsilon || 
-                    Math.abs(cPar[i][j] - A[i][j]) > epsilon) {
+                if (Math.abs(cSeq[i][j] - cPar[i][j]) > epsilon) {
                     return false;
                 }
             }
         }
+
         return true;
     }
+
 
     // 5. Benchmark Harness
     public static void main(String[] args) {
