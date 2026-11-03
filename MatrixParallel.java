@@ -125,8 +125,20 @@ public class MatrixParallel {
             // Discarded warm-up runs
             double[][] Aw = generateMatrix(n, 1L);
             double[][] Bw = generateMatrix(n, 2L);
-            multiplySequential(Aw, Bw, n);
-            multiplyParallel(Aw, Bw, n, 2);
+
+            // Warm-up sequential implementation
+            for (int w = 0; w < 3; w++) {
+                double[][] Cw = multiplySequential(Aw, Bw, n);
+                consumeResult(Cw, n);
+            }
+
+            // Warm-up parallel implementation for every thread count
+            for (int threads : threadCounts) {
+                for (int w = 0; w < 3; w++) {
+                    double[][] Cw = multiplyParallel(Aw, Bw, n, threads);
+                    consumeResult(Cw, n);
+                }
+            }
 
             // Test Parallel configurations
             for (int threads : threadCounts) {
