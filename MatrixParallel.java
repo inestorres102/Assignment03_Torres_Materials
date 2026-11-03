@@ -141,8 +141,8 @@ public class MatrixParallel {
             // Test Sequential baseline
             System.out.println("\n--- Running Sequential Baseline ---");
             for (int rep = 1; rep <= repetitions; rep++) {
-                double[][] A = generateMatrix(n, 300L + rep);
-                double[][] B = generateMatrix(n, 400L + rep);
+                double[][] A = generateMatrix(n, 100L + rep);
+                double[][] B = generateMatrix(n, 200L + rep);
 
                 System.gc();
                 long memBefore = runtime.totalMemory() - runtime.freeMemory();
