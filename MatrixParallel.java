@@ -7,7 +7,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+
 public class MatrixParallel {
+
+    // Prevent the result from being ignored by the JVM
+    private static volatile double resultSink = 0.0;
 
     // 1. Deterministic Matrix Generator
     public static double[][] generateMatrix(int n, long seed) {
@@ -55,6 +59,20 @@ public class MatrixParallel {
         executor.shutdown();
         executor.awaitTermination(60, TimeUnit.SECONDS);
         return C;
+    }
+
+
+    // Consume the result outside the timed region
+    public static void consumeResult(double[][] C, int n) {
+        double checksum = 0.0;
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                checksum += C[i][j];
+            }
+        }
+
+        resultSink = checksum;
     }
 
 
@@ -123,6 +141,9 @@ public class MatrixParallel {
                     double[][] C = multiplyParallel(A, B, n, threads);
                     long duration = System.nanoTime() - start;
                     
+                    // Consume result outside the timed region
+                    consumeResult(C, n);
+
                     long memAfter = runtime.totalMemory() - runtime.freeMemory();
                     
                     double timeSec = duration / 1.0e9;
@@ -151,6 +172,9 @@ public class MatrixParallel {
                 double[][] C = multiplySequential(A, B, n);
                 long duration = System.nanoTime() - start;
                 
+                // Consume result outside the timed region
+                consumeResult(C, n);
+
                 long memAfter = runtime.totalMemory() - runtime.freeMemory();
                 
                 double timeSec = duration / 1.0e9;
