@@ -101,15 +101,7 @@ public class MatrixParallel {
 
         double epsilon = 1e-9;
 
-        for (int i = 0; i < n; i++) {
-            for (int j = 0; j < n; j++) {
-                if (Math.abs(cSeq[i][j] - cPar[i][j]) > epsilon) {
-                    return false;
-                }
-            }
-        }
-
-        return true;
+        return matricesEqual(cSeq, cPar, n, epsilon);
     }
 
 
