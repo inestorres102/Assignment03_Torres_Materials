@@ -95,7 +95,7 @@ public class MatrixParallel {
             String csvFile = "results_parallel.csv";
 
             boolean writeHeader = !(new File(csvFile).exists());
-            PrintWriter writer = new PrintWriter(new FileWriter(csvFile, true));
+            PrintWriter writer = new PrintWriter(new FileWriter(csvFile, false));
             if (writeHeader) {
                 writer.println("method,n,threads,repetition,time_seconds,memory_mb");
             }
