@@ -4,9 +4,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import os
 
-# --------------------------------------------------
 # 1. Configuration
-# --------------------------------------------------
+
 
 plt.rcParams.update({
     'font.size': 11,
@@ -27,9 +26,9 @@ os.makedirs(output_dir, exist_ok=True)
 
 df = pd.read_csv(csv_file)
 
-# --------------------------------------------------
+
 # 2. Calculate statistics
-# --------------------------------------------------
+
 
 summary = df.groupby(["method", "n", "threads"]).agg(
     time_median=("time_seconds", "median"),
@@ -69,9 +68,9 @@ print(summary[
      "time_iqr", "speedup", "efficiency"]
 ].to_string(index=False))
 
-# --------------------------------------------------
+
 # 3. Generate plots for each matrix size
-# --------------------------------------------------
+
 
 matrix_sizes = sorted(summary["n"].unique())
 par_data = summary[summary["method"] == "Parallel"].copy()
@@ -94,9 +93,9 @@ for n in matrix_sizes:
         (summary["n"] == n)
     ]["time_median"].iloc[0]
 
-    # ----------------------------------------------
+
     # PLOT 1: Runtime with IQR error bars
-    # ----------------------------------------------
+
 
     errors = np.array([
         times - data["time_q1"].values,
@@ -132,9 +131,9 @@ for n in matrix_sizes:
     plt.savefig(os.path.join(size_dir, "runtime.png"), dpi=300)
     plt.close()
 
-    # ----------------------------------------------
+
     # PLOT 2: Speedup
-    # ----------------------------------------------
+
 
     plt.figure(figsize=(8, 5))
 
@@ -164,9 +163,9 @@ for n in matrix_sizes:
     plt.savefig(os.path.join(size_dir, "speedup.png"), dpi=300)
     plt.close()
 
-    # ----------------------------------------------
+
     # PLOT 3: Efficiency
-    # ----------------------------------------------
+
 
     plt.figure(figsize=(8, 5))
 
@@ -198,9 +197,8 @@ for n in matrix_sizes:
 
     print(f"Generated plots for n = {n}")
 
-# --------------------------------------------------
+
 # 4. Memory plot
-# --------------------------------------------------
 
 memory_data = (
     summary[["n", "mem_median"]]
@@ -228,9 +226,7 @@ plt.close()
 
 
 
-# --------------------------------------------------
 # 4. Comparative plots: all matrix sizes
-# --------------------------------------------------
 
 # Runtime comparison
 plt.figure(figsize=(9, 6))
@@ -324,9 +320,7 @@ print("Generated comparative plots for all matrix sizes")
 
 
 
-# --------------------------------------------------
 # 5. Finish
-# --------------------------------------------------
 
 print("\nAll plots generated successfully!")
 print(f"Output directory: '{output_dir}'")
