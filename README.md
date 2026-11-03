@@ -1,79 +1,189 @@
-# Assignment 3: Parallel Matrix Multiplication and Scalability Analysis
+# Parallel Matrix Multiplication and Optional Vectorisation
 
-Empirical study evaluating shared-memory parallelization using Java's `ExecutorService`, focusing on multithreaded Speedup \(S(p)\) and Efficiency \(E(p)\) across varying thread counts.
+**Assignment 3 – BIG DATA – Academic Year 2026–2027**  
+Inés Torres Sánchez
 
-## 1. System and Hardware Environment
+## 1. Project Overview
 
-- **CPU:** 12th Gen Intel(R) Core(TM) i7-12650H (10 physical cores: 6 Performance + 4 Efficiency cores, 16 logical processors).
-- **RAM:** 16 GB DDR4.
-- **Operating System:** Windows 11 Home (64-bit).
-- **Java Compiler:** `javac 27.0.1.0.3`
-- **Java Runtime:** `java 27.0.1.0.3` (Oracle HotSpot 64-Bit Server VM).
-- **Available Processors:** 16, as reported by `Runtime.getRuntime().availableProcessors()`.
-- **Python Environment:** Python 3.13 (Pandas, Matplotlib and NumPy).
+This project investigates the effect of the number of worker threads on the execution time of dense square matrix multiplication.
 
-## 2. Experimental Protocol
+A sequential implementation is compared with a parallel implementation using Java's `ExecutorService` and a fixed thread pool.
 
-- **Algorithmic Workload:** Equivalent dense \(O(n^3)\) matrix multiplication algorithm applied in both sequential and parallel implementations, using double-precision floating-point values.
-- **Parallel Strategy:** Row-wise work distribution using Java's `ExecutorService` and a fixed thread pool. Each task computes one output row, avoiding concurrent writes to the same row.
-- **Thread Scaling (\(p\)):** Tested with 1, 2, 4, 8, 12 and 16 threads, using a fixed matrix dimension of \(n = 500\). A sequential implementation is also used as the baseline.
-- **Input Generation:** Matrices are generated using Java's pseudorandom number generator. For each measured repetition, seeds are set to `100L + repetition` and `200L + repetition`. The same input matrices are used by all configurations within each repetition.
-- **Validation:** Random matrices, identity matrices and zero matrices are tested. Results are checked using absolute and relative numerical tolerances of \(10^{-9}\).
-- **Timing Boundary:** Execution time is measured using Java's monotonic high-resolution timer (`System.nanoTime()`). Input generation is excluded from the timed section. The sequential measurement includes output matrix allocation and multiplication. The parallel measurement additionally includes output allocation, executor creation, task submission, synchronization and executor termination. Result consumption is performed after timing.
-- **Warm-up and Repetitions:** Three unrecorded warm-up executions are performed for the sequential implementation and for each parallel thread-count configuration. Each configuration is then measured over 10 repetitions. The execution order is rotated between repetitions to reduce potential ordering effects.
-- **Performance Metrics:** Median execution time and interquartile range (IQR) are reported. Speedup is calculated as \(S(p) = T_{seq}/T_p\), and efficiency as \(E(p) = S(p)/p\).
-- **Memory Metric:** Estimated matrix storage for three \(n \times n\) double-precision matrices. This is an array-payload estimate, not a measurement of peak process memory or total JVM memory usage. It excludes Java object overhead, executor structures and other runtime allocations.
+The main objective is to analyse how parallel execution affects runtime, speedup and parallel efficiency for different matrix sizes and thread configurations.
 
-## 3. Experimental Results
+## 2. Hardware and Software Environment
 
-The following results were obtained for matrices of dimension \(500 \times 500\), using 10 measured repetitions per configuration.
+### Hardware
+- **Processor:** 12th Gen Intel Core i7-12650H
+- **Physical cores:** 10 (6 Performance cores + 4 Efficient cores)
+- **Logical processors:** 16
+- **RAM:** 16 GB DDR4
 
-| Method | Threads | Median Time (s) | Speedup | Efficiency |
-|---|---:|---:|---:|---:|
-| Sequential | 1 | 0.019156 | 1.000 | 1.000 |
-| Parallel | 1 | 0.020815 | 0.920 | 0.920 |
-| Parallel | 2 | 0.012115 | 1.581 | 0.791 |
-| Parallel | 4 | 0.007042 | 2.720 | 0.680 |
-| Parallel | 8 | 0.005295 | 3.618 | 0.452 |
-| Parallel | 12 | 0.005044 | 3.797 | 0.316 |
-| Parallel | 16 | 0.005365 | 3.571 | 0.223 |
+### Software
+- **Operating System:** Windows 11 Home 64-bit
+- **Programming Language:** Java
+- **Java compiler/runtime:** JDK 27.0.1.0.3
+- **Data analysis:** Python 3.13
+- **Python libraries:** NumPy, pandas and Matplotlib
 
-The best measured speedup was obtained with 12 threads, reaching approximately 3.80. Increasing the thread count to 16 did not improve performance further.
+## 3. Implementations
 
-The generated plots illustrate the relationship between thread count, speedup and parallel efficiency.
+The project contains three Java source files:
 
-## 4. Build and Execution Instructions
+- **`MatrixOperations.java`**: Matrix generation, sequential multiplication, parallel multiplication and correctness checks.
+- **`CsvExporter.java`**: CSV header and measurement export functionality.
+- **`BenchmarkRunner.java`**: Benchmark configuration, execution, timing and result collection.
 
-### Compilation
+Both implementations use:
+- Dense square matrices stored as Java `double[][]` arrays.
+- Double-precision floating-point values.
+- The same conventional triple-loop multiplication algorithm (`i-k-j`).
+- The same input matrices for sequential and parallel comparisons within each repetition.
 
-```bash
-javac MatrixParallel.java
+### Parallel implementation
+
+The parallel implementation distributes output matrix rows among worker threads using a fixed-size `ExecutorService` thread pool.
+
+Each task computes one complete output row, ensuring that different tasks write to separate rows of the result matrix.
+
+## 4. Experimental Methodology
+
+### Matrix sizes
+
+The benchmark evaluates four square matrix dimensions:
+
+- 250 × 250
+- 500 × 500
+- 750 × 750
+- 1000 × 1000
+
+### Thread configurations
+
+The sequential implementation is used as the baseline. The parallel implementation is tested with the following worker counts:
+
+- 1
+- 2
+- 4
+- 8
+- 12
+- 16
+
+### Measurement protocol
+
+- **Warm-up runs:** 3 per configuration.
+- **Recorded repetitions:** 10 per configuration.
+- **Timer:** `System.nanoTime()`.
+- **Execution order:** Rotated between repetitions to reduce systematic ordering effects.
+- **Input generation:** Deterministic pseudorandom values using fixed seeds.
+- **Input consistency:** Sequential and parallel implementations use the same input matrices for each repetition.
+
+The measured execution time includes result matrix allocation, thread pool creation, task submission, computation and task completion. Result consumption and CSV writing are performed outside the timed region.
+
+The benchmark records individual measurements in CSV format. The analysis script calculates the median and interquartile range (IQR) for each configuration.
+
+### Metrics
+
+The following metrics are analysed:
+
+- **Execution time:** Time required to complete matrix multiplication.
+- **Speedup:** Ratio between sequential execution time and parallel execution time.
+
+  `Speedup(p) = T_seq / T_parallel(p)`
+
+- **Parallel efficiency:** Speedup divided by the number of worker threads.
+
+  `Efficiency(p) = Speedup(p) / p`
+
+- **Estimated matrix memory:** Approximate storage required for three dense matrices of double-precision values.
+
+  `Memory = 3 × n² × 8 bytes`
+
+This memory value is an estimate of matrix element storage, not a measurement of total process memory or JVM heap consumption. It excludes Java array-object overhead and other runtime allocations.
+
+## 5. Correctness Validation
+
+The implementation includes correctness checks comparing sequential and parallel multiplication results.
+
+The validation includes:
+- Comparisons using deterministic input matrices.
+- Absolute and relative numerical tolerance of `1e-9`.
+- Identity matrix tests.
+- Zero matrix tests.
+
+The parallel implementation also ensures that each task writes to a distinct output row.
+
+## 6. Repository Structure
+
+```text
+Assignment3/
+│
+├── src/
+│   ├── MatrixOperations.java
+│   ├── CsvExporter.java
+│   └── BenchmarkRunner.java
+│
+├── results/
+│   ├── results_parallel_multi_n.csv
+│   ├── summary_parallel_multi_n.csv
+│   └── initial_n500/
+│       ├── results_parallel.csv
+│       └── summary_parallel.csv
+│
+├── plots/
+│   └── Generated figures
+│
+├── plot_assignment3.py
+├── README.md
+└── .gitignore
 ```
 
-### Execution
+The `initial_n500` directory preserves the original single-size experiment. The multi-size CSV files contain the updated benchmark results and are used for the main analysis.
 
-Run the Java benchmark to generate raw measurements (`results_parallel.csv`):
+Compiled Java `.class` files are generated locally in the `out/` directory. This directory is excluded from version control and is not required in the repository.
 
-```bash
-java MatrixParallel
+## 7. How to Build and Run
+
+From the project root directory, create the output directory if it does not already exist:
+
+```powershell
+New-Item -ItemType Directory -Force out
 ```
 
-Run the Python analysis script to calculate summary statistics, Speedup and Efficiency, and generate plots:
+Compile the Java source files:
+
+```bash
+javac -d out src/*.java
+```
+
+Run the benchmark:
+
+```bash
+java -cp out BenchmarkRunner
+```
+
+The benchmark generates the raw CSV file in the `results/` directory.
+
+To regenerate the statistical summaries and figures, run:
 
 ```bash
 python plot_assignment3.py
 ```
 
-## 5. Repository File Structure
+Python dependencies:
 
-```text
-Assignment3/
-├── .gitignore
-├── README.md
-├── MatrixParallel.java
-├── plot_assignment3.py
-├── results_parallel.csv
-├── summary_parallel.csv
-├── plot_speedup.png
-└── plot_efficiency.png
+```bash
+pip install numpy pandas matplotlib
 ```
+
+## 8. Results and Reproducibility
+
+The repository includes:
+
+- Raw benchmark measurements.
+- Statistical summaries containing median runtime, IQR, speedup and parallel efficiency.
+- Figures generated from the experimental data.
+- Source code and instructions to reproduce the benchmark and analysis.
+
+The multi-size experiment contains 280 recorded measurements: 4 matrix sizes × 7 execution configurations × 10 repetitions.
+
+All measurements and generated figures should be interpreted within the scope of the tested hardware, software and implementation.
