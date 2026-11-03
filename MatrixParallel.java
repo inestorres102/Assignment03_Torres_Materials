@@ -56,7 +56,12 @@ public class MatrixParallel {
         }
 
         executor.shutdown();
-        executor.awaitTermination(60, TimeUnit.SECONDS);
+
+        if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+            executor.shutdownNow();
+            throw new InterruptedException("Parallel execution timed out.");
+        }
+
         return C;
     }
 
