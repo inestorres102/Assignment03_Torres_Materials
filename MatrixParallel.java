@@ -177,7 +177,17 @@ public class MatrixParallel {
 
     // 5. Benchmark Harness
     public static void main(String[] args) {
+        String csvFile = "results_parallel_multi_n.csv";
+
+        int[] matrixSizes = {250, 500, 750, 1000};
+        int[] threadCounts = {1, 2, 4, 8, 12, 16};
+        int[] configurations = {0, 1, 2, 4, 8, 12, 16};
+
+        int repetitions = 10;
+        int warmupRuns = 3;
+
         try {
+            // Correctness validation
             if (!checkCorrectness(50)) {
                 System.err.println("Error: Random matrix validation failed.");
                 return;
@@ -190,103 +200,132 @@ public class MatrixParallel {
             }
             System.out.println("Identity and zero matrix validation successful.");
 
-            int n = 500; // Fixed feasible matrix size for thread scaling comparison
+            System.out.println("Available processors: "
+                    + Runtime.getRuntime().availableProcessors());
 
-            System.out.println("Available processors: " + Runtime.getRuntime().availableProcessors());
+            try (PrintWriter writer =
+                        new PrintWriter(new FileWriter(csvFile, false))) {
 
-            double matrixMemoryMB =
-                    (3.0 * n * n * Double.BYTES) / (1024.0 * 1024.0);
+                writer.println(
+                        "method,n,threads,repetition,time_seconds,"
+                        + "estimated_matrix_memory_mb"
+                );
 
-            int[] threadCounts = {1, 2, 4, 8, 12, 16}; // Adjust to your CPU's physical/logical cores
-            int repetitions = 10;
-            String csvFile = "results_parallel.csv";
+                // Run the experiment for every matrix size
+                for (int n : matrixSizes) {
 
-            PrintWriter writer = new PrintWriter(new FileWriter(csvFile, false));
-            writer.println("method,n,threads,repetition,time_seconds,estimated_matrix_memory_mb");
-
-            System.out.printf("\n--- Running Parallel Matrix Multiplication (n = %d) ---\n", n);
-
-            // Discarded warm-up runs
-            double[][] Aw = generateMatrix(n, 1L);
-            double[][] Bw = generateMatrix(n, 2L);
-
-            // Warm-up sequential implementation
-            for (int w = 0; w < 3; w++) {
-                double[][] Cw = multiplySequential(Aw, Bw, n);
-                consumeResult(Cw, n);
-            }
-
-            // Warm-up parallel implementation for every thread count
-            for (int threads : threadCounts) {
-                for (int w = 0; w < 3; w++) {
-                    double[][] Cw = multiplyParallel(Aw, Bw, n, threads);
-                    consumeResult(Cw, n);
-                }
-            }
-
-            // Test Parallel configurations
-            // Benchmark configurations: 0 represents the sequential baseline
-            int[] configurations = {0, 1, 2, 4, 8, 12, 16};
-
-            // Run benchmark with rotating configuration order
-            for (int rep = 1; rep <= repetitions; rep++) {
-
-                // Generate one input pair per repetition.
-                // All methods use exactly the same matrices.
-                double[][] A = generateMatrix(n, 100L + rep);
-                double[][] B = generateMatrix(n, 200L + rep);
-
-                // Rotate the execution order in each repetition
-                int offset = (rep - 1) % configurations.length;
-
-                for (int index = 0; index < configurations.length; index++) {
-
-                    int config = configurations[(index + offset) % configurations.length];
-
-                    long start = System.nanoTime();
-
-                    double[][] C;
-                    String method;
-                    int threads;
-
-                    if (config == 0) {
-                        method = "Sequential";
-                        threads = 1;
-                        C = multiplySequential(A, B, n);
-                    } else {
-                        method = "Parallel";
-                        threads = config;
-                        C = multiplyParallel(A, B, n, threads);
-                    }
-
-                    long duration = System.nanoTime() - start;
-
-                    // Consume the result outside the timed region
-                    consumeResult(C, n);
-
-                    double timeSec = duration / 1.0e9;
-                    double memMb = matrixMemoryMB;
-
-                    writer.printf(
-                            Locale.US,
-                            "%s,%d,%d,%d,%.9f,%.4f%n",
-                            method, n, threads, rep, timeSec, memMb
-                    );
-
-                    writer.flush();
+                    double matrixMemoryMB =
+                            (3.0 * n * n * Double.BYTES)
+                            / (1024.0 * 1024.0);
 
                     System.out.printf(
-                            "Method: %-10s | Threads: %2d | Rep: %d | Time: %.4f s%n",
-                            method, threads, rep, timeSec
+                            "\n--- Matrix size: %d x %d ---\n", n, n
                     );
+
+                    // Generate warm-up inputs
+                    double[][] Aw = generateMatrix(n, 1L);
+                    double[][] Bw = generateMatrix(n, 2L);
+
+                    // Sequential warm-up
+                    for (int w = 0; w < warmupRuns; w++) {
+                        double[][] Cw =
+                                multiplySequential(Aw, Bw, n);
+                        consumeResult(Cw, n);
+                    }
+
+                    // Parallel warm-up for every thread count
+                    for (int threads : threadCounts) {
+                        for (int w = 0; w < warmupRuns; w++) {
+                            double[][] Cw =
+                                    multiplyParallel(Aw, Bw, n, threads);
+                            consumeResult(Cw, n);
+                        }
+                    }
+
+                    // Measured repetitions
+                    for (int rep = 1; rep <= repetitions; rep++) {
+
+                        // Same input matrices for all configurations
+                        // within this repetition
+                        long seedA = 1000L * n + rep;
+                        long seedB = 2000L * n + rep;
+
+                        double[][] A = generateMatrix(n, seedA);
+                        double[][] B = generateMatrix(n, seedB);
+
+                        // Rotate configuration order
+                        int offset =
+                                (rep - 1) % configurations.length;
+
+                        for (int index = 0;
+                            index < configurations.length;
+                            index++) {
+
+                            int config = configurations[
+                                    (index + offset) % configurations.length
+                            ];
+
+                            String method;
+                            int threads;
+                            double[][] C;
+
+                            long start = System.nanoTime();
+
+                            if (config == 0) {
+                                method = "Sequential";
+                                threads = 1;
+
+                                C = multiplySequential(A, B, n);
+                            } else {
+                                method = "Parallel";
+                                threads = config;
+
+                                C = multiplyParallel(A, B, n, threads);
+                            }
+
+                            long duration = System.nanoTime() - start;
+
+                            // Consume result outside timed region
+                            consumeResult(C, n);
+
+                            double timeSec = duration / 1.0e9;
+
+                            writer.printf(
+                                    Locale.US,
+                                    "%s,%d,%d,%d,%.9f,%.6f%n",
+                                    method,
+                                    n,
+                                    threads,
+                                    rep,
+                                    timeSec,
+                                    matrixMemoryMB
+                            );
+
+                            writer.flush();
+
+                            System.out.printf(
+                                    "n: %4d | Method: %-10s | "
+                                    + "Threads: %2d | Rep: %2d | "
+                                    + "Time: %.6f s%n",
+                                    n,
+                                    method,
+                                    threads,
+                                    rep,
+                                    timeSec
+                            );
+                        }
+                    }
                 }
             }
 
-            writer.close();
-            System.out.println("\n[Java] Parallel benchmark completed successfully. Data saved to " + csvFile);
+            System.out.println(
+                    "\n[Java] Multi-size benchmark completed successfully."
+            );
+            System.out.println("Data saved to " + csvFile);
 
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
+
 }
