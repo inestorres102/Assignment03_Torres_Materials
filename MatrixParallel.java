@@ -171,6 +171,8 @@ public class MatrixParallel {
 
             int n = 500; // Fixed feasible matrix size for thread scaling comparison
 
+            System.out.println("Available processors: " + Runtime.getRuntime().availableProcessors());
+
             double matrixMemoryMB =
                     (3.0 * n * n * Double.BYTES) / (1024.0 * 1024.0);
 
