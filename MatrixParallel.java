@@ -104,6 +104,37 @@ public class MatrixParallel {
         return matricesEqual(cSeq, cPar, n, epsilon);
     }
 
+    // Check multiplication with identity and zero matrices
+    public static boolean checkSpecialCases(int n) throws InterruptedException {
+        double[][] A = generateMatrix(n, 123L);
+
+        double[][] identity = new double[n][n];
+        double[][] zeros = new double[n][n];
+
+        // Build identity matrix
+        for (int i = 0; i < n; i++) {
+            identity[i][i] = 1.0;
+        }
+
+        // Sequential results
+        double[][] identitySeq = multiplySequential(A, identity, n);
+        double[][] zerosSeq = multiplySequential(A, zeros, n);
+
+        // Parallel results
+        double[][] identityPar = multiplyParallel(A, identity, n, 2);
+        double[][] zerosPar = multiplyParallel(A, zeros, n, 2);
+
+        double epsilon = 1e-9;
+
+        // Expected results: A * I = A and A * 0 = 0
+        boolean identityCorrect = matricesEqual(A, identitySeq, n, epsilon)
+                && matricesEqual(A, identityPar, n, epsilon);
+
+        boolean zerosCorrect = matricesEqual(zeros, zerosSeq, n, epsilon)
+                && matricesEqual(zeros, zerosPar, n, epsilon);
+
+        return identityCorrect && zerosCorrect;
+    }
 
     // 5. Benchmark Harness
     public static void main(String[] args) {
