@@ -98,14 +98,32 @@ public class MatrixParallel {
     }
 
     // Compare two matrices using a numerical tolerance
-    public static boolean matricesEqual(double[][] A, double[][] B, int n, double epsilon) {
+    public static boolean matricesEqual(
+            double[][] A,
+            double[][] B,
+            int n,
+            double absTol,
+            double relTol) {
+
         for (int i = 0; i < n; i++) {
             for (int j = 0; j < n; j++) {
-                if (Math.abs(A[i][j] - B[i][j]) > epsilon) {
+
+                double a = A[i][j];
+                double b = B[i][j];
+
+                if (!Double.isFinite(a) || !Double.isFinite(b)) {
+                    return false;
+                }
+
+                double difference = Math.abs(a - b);
+                double tolerance = absTol + relTol * Math.abs(a);
+
+                if (difference > tolerance) {
                     return false;
                 }
             }
         }
+
         return true;
     }
 
@@ -117,9 +135,10 @@ public class MatrixParallel {
         double[][] cSeq = multiplySequential(A, B, n);
         double[][] cPar = multiplyParallel(A, B, n, 2);
 
-        double epsilon = 1e-9;
+        double absTol = 1e-9;
+        double relTol = 1e-9;
 
-        return matricesEqual(cSeq, cPar, n, epsilon);
+        return matricesEqual(cSeq, cPar, n, absTol, relTol);
     }
 
     // Check multiplication with identity and zero matrices
@@ -142,14 +161,16 @@ public class MatrixParallel {
         double[][] identityPar = multiplyParallel(A, identity, n, 2);
         double[][] zerosPar = multiplyParallel(A, zeros, n, 2);
 
-        double epsilon = 1e-9;
+        double absTol = 1e-9;
+        double relTol = 1e-9;
 
-        // Expected results: A * I = A and A * 0 = 0
-        boolean identityCorrect = matricesEqual(A, identitySeq, n, epsilon)
-                && matricesEqual(A, identityPar, n, epsilon);
+        boolean identityCorrect =
+                matricesEqual(A, identitySeq, n, absTol, relTol)
+                && matricesEqual(A, identityPar, n, absTol, relTol);
 
-        boolean zerosCorrect = matricesEqual(zeros, zerosSeq, n, epsilon)
-                && matricesEqual(zeros, zerosPar, n, epsilon);
+        boolean zerosCorrect =
+                matricesEqual(zeros, zerosSeq, n, absTol, relTol)
+                && matricesEqual(zeros, zerosPar, n, absTol, relTol);
 
         return identityCorrect && zerosCorrect;
     }
@@ -177,7 +198,7 @@ public class MatrixParallel {
                     (3.0 * n * n * Double.BYTES) / (1024.0 * 1024.0);
 
             int[] threadCounts = {1, 2, 4, 8, 12, 16}; // Adjust to your CPU's physical/logical cores
-            int repetitions = 5;
+            int repetitions = 10;
             String csvFile = "results_parallel.csv";
 
             PrintWriter writer = new PrintWriter(new FileWriter(csvFile, false));
@@ -204,46 +225,61 @@ public class MatrixParallel {
             }
 
             // Test Parallel configurations
-            for (int threads : threadCounts) {
-                for (int rep = 1; rep <= repetitions; rep++) {
-                    double[][] A = generateMatrix(n, 100L + rep);
-                    double[][] B = generateMatrix(n, 200L + rep);
+            // Benchmark configurations: 0 represents the sequential baseline
+            int[] configurations = {0, 1, 2, 4, 8, 12, 16};
+
+            // Run benchmark with rotating configuration order
+            for (int rep = 1; rep <= repetitions; rep++) {
+
+                // Generate one input pair per repetition.
+                // All methods use exactly the same matrices.
+                double[][] A = generateMatrix(n, 100L + rep);
+                double[][] B = generateMatrix(n, 200L + rep);
+
+                // Rotate the execution order in each repetition
+                int offset = (rep - 1) % configurations.length;
+
+                for (int index = 0; index < configurations.length; index++) {
+
+                    int config = configurations[(index + offset) % configurations.length];
 
                     long start = System.nanoTime();
-                    double[][] C = multiplyParallel(A, B, n, threads);
+
+                    double[][] C;
+                    String method;
+                    int threads;
+
+                    if (config == 0) {
+                        method = "Sequential";
+                        threads = 1;
+                        C = multiplySequential(A, B, n);
+                    } else {
+                        method = "Parallel";
+                        threads = config;
+                        C = multiplyParallel(A, B, n, threads);
+                    }
+
                     long duration = System.nanoTime() - start;
 
+                    // Consume the result outside the timed region
                     consumeResult(C, n);
 
                     double timeSec = duration / 1.0e9;
                     double memMb = matrixMemoryMB;
 
-                    writer.printf(Locale.US, "Parallel,%d,%d,%d,%.6f,%.4f\n", n, threads, rep, timeSec, memMb);
+                    writer.printf(
+                            Locale.US,
+                            "%s,%d,%d,%d,%.9f,%.4f%n",
+                            method, n, threads, rep, timeSec, memMb
+                    );
+
                     writer.flush();
-                    
-                    System.out.printf("Method: Parallel   | Threads: %2d | Rep: %d | Time: %.4f s\n", threads, rep, timeSec);
+
+                    System.out.printf(
+                            "Method: %-10s | Threads: %2d | Rep: %d | Time: %.4f s%n",
+                            method, threads, rep, timeSec
+                    );
                 }
-            }
-
-            // Test Sequential baseline
-            System.out.println("\n--- Running Sequential Baseline ---");
-            for (int rep = 1; rep <= repetitions; rep++) {
-                double[][] A = generateMatrix(n, 100L + rep);
-                double[][] B = generateMatrix(n, 200L + rep);
-
-                long start = System.nanoTime();
-                double[][] C = multiplySequential(A, B, n);
-                long duration = System.nanoTime() - start;
-
-                consumeResult(C, n);
-
-                double timeSec = duration / 1.0e9;
-                double memMb = matrixMemoryMB;
-
-                writer.printf(Locale.US, "Sequential,%d,1,%d,%.6f,%.4f\n", n, rep, timeSec, memMb);
-                writer.flush();
-                
-                System.out.printf("Method: Sequential | Threads:  1 | Rep: %d | Time: %.4f s\n", rep, timeSec);
             }
 
             writer.close();
