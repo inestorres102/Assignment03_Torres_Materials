@@ -140,10 +140,16 @@ public class MatrixParallel {
     public static void main(String[] args) {
         try {
             if (!checkCorrectness(50)) {
-                System.err.println("Error: Correctness validation failed. Tolerance exceeded.");
+                System.err.println("Error: Random matrix validation failed.");
                 return;
             }
-            System.out.println("Validation successful: Sequential and Parallel results match.");
+            System.out.println("Random matrix validation successful.");
+
+            if (!checkSpecialCases(50)) {
+                System.err.println("Error: Identity or zero matrix validation failed.");
+                return;
+            }
+            System.out.println("Identity and zero matrix validation successful.");
 
             int n = 500; // Fixed feasible matrix size for thread scaling comparison
 
