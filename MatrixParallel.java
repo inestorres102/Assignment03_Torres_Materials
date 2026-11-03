@@ -1,4 +1,3 @@
-import java.io.File;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 import java.util.Locale;
@@ -112,11 +111,8 @@ public class MatrixParallel {
             int repetitions = 5;
             String csvFile = "results_parallel.csv";
 
-            boolean writeHeader = !(new File(csvFile).exists());
             PrintWriter writer = new PrintWriter(new FileWriter(csvFile, false));
-            if (writeHeader) {
-                writer.println("method,n,threads,repetition,time_seconds,memory_mb");
-            }
+            writer.println("method,n,threads,repetition,time_seconds,memory_mb");
 
             Runtime runtime = Runtime.getRuntime();
 
