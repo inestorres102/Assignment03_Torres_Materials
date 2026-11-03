@@ -79,6 +79,17 @@ public class MatrixParallel {
         resultSink = checksum;
     }
 
+    // Compare two matrices using a numerical tolerance
+    public static boolean matricesEqual(double[][] A, double[][] B, int n, double epsilon) {
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < n; j++) {
+                if (Math.abs(A[i][j] - B[i][j]) > epsilon) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
 
     // 4. Correctness Check
     public static boolean checkCorrectness(int n) throws InterruptedException {
