@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 
@@ -39,15 +40,22 @@ public class MatrixParallel {
     }
 
     // 3. Parallel Implementation (Row Distribution)
-    public static double[][] multiplyParallel(double[][] A, double[][] B, int n, int numThreads) throws InterruptedException {
+    public static double[][] multiplyParallel(double[][] A, double[][] B, int n, int numThreads)
+            throws InterruptedException {
+
         double[][] C = new double[n][n];
+
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+
+        Future<?>[] futures = new Future<?>[n];
 
         for (int i = 0; i < n; i++) {
             final int row = i;
-            executor.submit(() -> {
+
+            futures[i] = executor.submit(() -> {
                 for (int k = 0; k < n; k++) {
                     double a = A[row][k];
+
                     for (int j = 0; j < n; j++) {
                         C[row][j] += a * B[k][j];
                     }
@@ -57,9 +65,19 @@ public class MatrixParallel {
 
         executor.shutdown();
 
-        if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+        try {
+            for (Future<?> future : futures) {
+                future.get();
+            }
+
+            if (!executor.awaitTermination(60, TimeUnit.SECONDS)) {
+                executor.shutdownNow();
+                throw new InterruptedException("Parallel execution timed out.");
+            }
+
+        } catch (java.util.concurrent.ExecutionException e) {
             executor.shutdownNow();
-            throw new InterruptedException("Parallel execution timed out.");
+            throw new RuntimeException("A parallel task failed.", e);
         }
 
         return C;
