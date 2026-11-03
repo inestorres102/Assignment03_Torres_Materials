@@ -22,7 +22,7 @@ df = pd.read_csv(csv_file)
 summary = df.groupby(["method", "n", "threads"]).agg(
     time_median=("time_seconds", "median"),
     time_iqr=("time_seconds", lambda x: np.percentile(x, 75) - np.percentile(x, 25)),
-    mem_median=("memory_mb", "median")
+    mem_median=("estimated_matrix_memory_mb", "median")
 ).reset_index()
 
 # 2. Isolate Sequential Baseline (T_seq)
