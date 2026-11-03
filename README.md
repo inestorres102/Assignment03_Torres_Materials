@@ -1,4 +1,4 @@
-# Parallel Matrix Multiplication and Optional Vectorisation
+# Parallel Matrix Multiplication and Scalability Analysis
 
 **Assignment 3 – BIG DATA – Academic Year 2026–2027**  
 Inés Torres Sánchez
