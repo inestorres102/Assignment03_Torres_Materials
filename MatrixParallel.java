@@ -87,7 +87,7 @@ public class MatrixParallel {
                 System.err.println("Error: Correctness validation failed. Tolerance exceeded.");
                 return;
             }
-            System.out.println("Validation successful: Sequential and Parallel kernels match identity matrix.");
+            System.out.println("Validation successful: Sequential and Parallel results match.");
 
             int n = 500; // Fixed feasible matrix size for thread scaling comparison
             int[] threadCounts = {1, 2, 4, 8, 12, 16}; // Adjust to your CPU's physical/logical cores
