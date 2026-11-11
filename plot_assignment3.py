@@ -249,7 +249,7 @@ plt.xticks(sorted(par_data["threads"].unique()))
 plt.grid(True, linestyle="--", alpha=0.6)
 plt.legend(title="Matrix size")
 plt.tight_layout()
-plt.savefig(os.path.join(output_dir, "runtime_comparison.png"), dpi=300)
+plt.savefig(os.path.join(output_dir, "runtime_all_sizes.png"), dpi=300)
 plt.close()
 
 # Speedup comparison
@@ -281,7 +281,7 @@ plt.xticks(sorted(par_data["threads"].unique()))
 plt.grid(True, linestyle="--", alpha=0.6)
 plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(output_dir, "speedup_comparison.png"), dpi=300)
+plt.savefig(os.path.join(output_dir, "speedup_all_sizes.png"), dpi=300)
 plt.close()
 
 # Efficiency comparison
@@ -313,7 +313,7 @@ plt.ylim(bottom=0)
 plt.grid(True, linestyle="--", alpha=0.6)
 plt.legend()
 plt.tight_layout()
-plt.savefig(os.path.join(output_dir, "efficiency_comparison.png"), dpi=300)
+plt.savefig(os.path.join(output_dir, "efficiency_all_sizes.png"), dpi=300)
 plt.close()
 
 print("Generated comparative plots for all matrix sizes")
