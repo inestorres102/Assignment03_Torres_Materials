@@ -130,7 +130,25 @@ Assignment3/
 │       └── summary_parallel.csv
 │
 ├── plots/
-│   └── Generated figures
+|   ├── speedup_all_sizes.png
+|   ├── runtime_all_sizes.png
+|   ├── efficiency_all_sizes.png
+|   ├── n_250/
+|   │   ├── speedup.png
+|   │   ├── runtime.png
+|   │   └── efficiency.png
+|   ├── n_500/
+|   │   ├── speedup.png
+|   │   ├── runtime.png
+|   │   └── efficiency.png
+|   ├── n_750/
+|   │   ├── speedup.png
+|   │   ├── runtime.png
+|   │   └── efficiency.png
+|   └── n_1000/
+|       ├── speedup.png
+|       ├── runtime.png
+|       └── efficiency.png
 │
 ├── plot_assignment3.py
 ├── README.md
