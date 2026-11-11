@@ -239,12 +239,11 @@ The following table summarises the best-performing parallel configuration for ea
 | 750 × 750 | 0.116088 | 16 | 0.030389 | 3.82x |
 | 1000 × 1000 | 0.304643 | 16 | 0.063612 | 4.79x |
 
+
 The results show that parallel execution becomes increasingly beneficial as matrix size grows.
 
-For the smallest matrix, parallel overhead limits the performance improvement. For larger matrices, the computational workload is sufficient to benefit from a higher number of worker threads.
+For the smallest matrix (250 × 250), the best performance is achieved with 8 threads, obtaining a speedup of approximately 1.77×. For the larger matrices, the best-performing configuration uses 16 threads, reaching speedups of approximately 3.91×, 4.61× and 5.80× for matrix sizes of 500, 750 and 1000, respectively.
 
-The highest observed speedup is approximately **4.79x**, obtained with 16 threads for matrices of dimension 1000.
-
-However, increasing the number of threads does not always improve performance. The best thread count depends on the matrix dimension and the overhead associated with parallel execution.
+These results suggest that larger workloads benefit more from parallel execution. However, increasing the number of threads does not always improve performance, since parallel execution introduces additional overhead. This is particularly noticeable for the smallest matrix, where using 16 threads performs worse than using 8 threads.
 
 All measurements and generated figures should be interpreted within the scope of the tested hardware, software and implementation.
