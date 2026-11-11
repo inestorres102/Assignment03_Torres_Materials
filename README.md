@@ -81,7 +81,7 @@ The sequential implementation is used as the baseline. The parallel implementati
 - **Warm-up runs:** 3 per configuration.
 - **Recorded repetitions:** 10 per configuration.
 - **Timer:** `System.nanoTime()`.
-- **Execution order:** Configurations are rotated between repetitions to reduce systematic ordering effects.
+- **Execution order:** The order of configurations is rotated between repetitions. The starting position changes cyclically, reducing the potential influence of execution order on the measurements. Since there are seven configurations and ten repetitions, the rotation does not produce a fully balanced distribution of execution positions.
 - **Input generation:** Deterministic pseudorandom values using fixed seeds.
 - **Input consistency:** Sequential and parallel implementations use the same input matrices for each repetition.
 
@@ -117,9 +117,9 @@ The following metrics are analysed:
 
 - **Estimated matrix memory:** Approximate storage required for three dense matrices of double-precision values.
 
-  `Memory = 3 × n² × 8 bytes`
+  `Memory = (3 × n² × 8) / 1024² bytes`
 
-The memory estimate is expressed in MiB and represents matrix element storage only. It is not a measurement of total process memory or JVM heap consumption. It excludes Java array-object overhead and other runtime allocations.
+The memory estimate is expressed in mebibytes (MiB), where 1 MiB = 1024² bytes. It represents matrix element storage only and is not a measurement of total process memory or JVM heap consumption. It excludes Java array-object overhead and other runtime allocations.
 
 ## 5. Correctness Validation
 
@@ -155,6 +155,7 @@ Assignment3/
 │   ├── speedup_all_sizes.png
 │   ├── runtime_all_sizes.png
 │   ├── efficiency_all_sizes.png
+|   ├── memory.png
 │   ├── n_250/
 │   │   ├── speedup.png
 │   │   ├── runtime.png
@@ -232,13 +233,14 @@ The repository includes:
 
 The following table summarises the best-performing parallel configuration for each matrix dimension.
 
-| Matrix size | Sequential median (s) | Best threads | Parallel median (s) | Speedup |
+| Matrix size | Sequential median (s) | Best threads | Parallel median (s) | Speedup |  Estimated memory (MiB) |
 |---|---:|---:|---:|---:|
-| 250 × 250 | 0.003843 | 8 | 0.002844 | 1.35x |
-| 500 × 500 | 0.038407 | 12 | 0.010403 | 3.69x |
-| 750 × 750 | 0.116088 | 16 | 0.030389 | 3.82x |
-| 1000 × 1000 | 0.304643 | 16 | 0.063612 | 4.79x |
+| 250 × 250 | 0.002466 | 8 | 0.001392 | 1.77× | 1.43 |
+| 500 × 500 | 0.019068 | 16 | 0.004879 | 3.91× | 5.72 |
+| 750 × 750 | 0.066312 | 16 | 0.014391 | 4.61× | 12.87 |
+| 1000 × 1000 | 0.161466 | 16 | 0.027855 | 5.80× | 22.89 |
 
+For matrix size 750 × 750, the median execution times obtained with 12 and 16 threads are very similar: 0.014467 s and 0.014391 s, respectively. Although 16 threads achieve the lowest observed median, the difference is only approximately 0.5%. Therefore, this result should not be interpreted as a significant performance improvement. It suggests that performance is approaching a plateau for this matrix size.
 
 The results show that parallel execution becomes increasingly beneficial as matrix size grows.
 

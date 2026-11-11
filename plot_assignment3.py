@@ -36,7 +36,7 @@ summary = df.groupby(["method", "n", "threads"]).agg(
     time_q3=("time_seconds", lambda x: np.percentile(x, 75)),
     time_iqr=("time_seconds", lambda x:
               np.percentile(x, 75) - np.percentile(x, 25)),
-    mem_median=("estimated_matrix_memory_mb", "median")
+    mem_median=("estimated_matrix_memory_mib", "median")
 ).reset_index()
 
 # Obtain the sequential baseline for each matrix size
@@ -60,7 +60,7 @@ summary["efficiency"] = (
 )
 
 # Export summary
-summary.to_csv("summary_parallel_multi_n.csv", index=False)
+summary.to_csv("results/summary_parallel_multi_n.csv", index=False)
 
 print("\n=== SUMMARY STATISTICS ===")
 print(summary[
@@ -216,7 +216,7 @@ plt.plot(
 )
 
 plt.xlabel("Matrix Dimension (n)", fontweight="bold")
-plt.ylabel("Estimated Memory (MB)", fontweight="bold")
+plt.ylabel("Estimated Memory (MiB)", fontweight="bold")
 plt.title("Estimated Matrix Memory vs. Matrix Size", fontweight="bold")
 plt.xticks(matrix_sizes)
 plt.grid(True, linestyle="--", alpha=0.6)

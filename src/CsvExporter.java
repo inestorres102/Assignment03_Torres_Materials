@@ -8,7 +8,7 @@ public class CsvExporter {
     public static void writeHeader(PrintWriter writer) {
         writer.println(
                 "method,n,threads,repetition,time_seconds,"
-                + "estimated_matrix_memory_mb"
+                + "estimated_matrix_memory_mib"
         );
     }
 
