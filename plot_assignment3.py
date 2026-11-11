@@ -14,7 +14,7 @@ plt.rcParams.update({
     'legend.fontsize': 9,
 })
 
-csv_file = "results_parallel_multi_n.csv"
+csv_file = "results/results_parallel_multi_n.csv"
 output_dir = "plots"
 
 if not os.path.exists(csv_file):
